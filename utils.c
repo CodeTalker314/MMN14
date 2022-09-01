@@ -1,6 +1,6 @@
 #include "utils.h"
 
-char symbols[32] = {'!','@','#','$','%','^','&','*','<','>','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v'};
+const char symbols[32] = {'!','@','#','$','%','^','&','*','<','>','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v'};
 
 unsigned int bits(unsigned int str, int start, int end)
 {
@@ -107,4 +107,18 @@ char* concat( char *s1, char *s2)
     {
         return NULL;
     }
+}
+
+char* asFile( char* str1)
+{
+    char* result;
+    asprintf(&result, "%s%s", str1, ".as\0");
+    return result;
+}
+
+char* amFile( char* str1)
+{
+    char* result;
+    asprintf(&result, "%s%s", str1, ".am\0");
+    return result;
 }
