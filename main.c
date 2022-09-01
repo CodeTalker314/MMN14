@@ -1,5 +1,6 @@
 #include "main.h"
 
+
 int main(int argc,char *argv[]) {
     FILE *file;
     char *macroName;
@@ -22,9 +23,12 @@ int main(int argc,char *argv[]) {
 
     /* test macro */
     for (i = 1; i < argc; i++) {
-       
-        fullFileName = concat(argv[i], ".as\0"); /* .as file name */
-        macroName = concat(argv[i], ".am\0"); /* .am file name */
+    
+        fullFileName = NULL;
+        macroName = NULL;
+        fullFileName = asFile(argv[i]);
+        macroName = amFile(argv[i]);
+
         printf("Started %s assembler process\n\n", fullFileName);
         file = fopen(fullFileName, "r"); /* create .as file */
         file = PreReadFile(fullFileName, Mhead);
@@ -35,7 +39,7 @@ int main(int argc,char *argv[]) {
         }
 
         file = fopen(macroName, "r"); /* create .am file */
-        printf("%s\n", macroName);
+        printf(&macroName);
     }
-return 0;
+return 1;
 }
