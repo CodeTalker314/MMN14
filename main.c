@@ -35,11 +35,11 @@ int main(int argc,char *argv[]) {
         if (file == NULL) {
             printf("file %s doesn't exist", fullFileName);
         } else {
-            WritePreFile(macroName, Mtail); /* write the file after macros span */
+            file = WritePreFile(macroName, Mtail); /* write the file after macros span */
         }
 
         file = fopen(macroName, "r"); /* create .am file */
-        printf(&macroName);
+        printf("%s\n",macroName);
     }
 return 1;
 }
