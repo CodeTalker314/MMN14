@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-extern char symbols[32];
+
 
 
 
@@ -15,3 +15,5 @@ int binaryToDecimal(char *binary);
 char * decimalToBinary(int num);
 int endOfLine(char *line);
 char* concat( char *s1, char *s2);
+char* asFile( char* str1);
+char* amFile( char* str1);
