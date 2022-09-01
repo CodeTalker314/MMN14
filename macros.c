@@ -138,12 +138,13 @@ FILE* WritePreFile(char *filename,struct Macros *tail)
   while(fgets(line, MAX, fpr)) /* getting lines */
   {
     if(!macroflag)
-    {   
-       if(!IsMacroCall(line, fpw, tail))
+    {
+        if(!IsMacroCall(line, fpw, tail))
        {
          if(StartEndMacro(line) == 0) /* no macro = regular code word */
          {
             fprintf(fpw,"%s",line); /* add word to file */
+            printf("%s\n", line);
          }
          else 
          {

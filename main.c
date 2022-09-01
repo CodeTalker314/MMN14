@@ -1,5 +1,9 @@
-#include "main.h"
-
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "utils.h"
+#include "macros.h"
+#include "syntax.h"
 
 int main(int argc,char *argv[]) {
     FILE *file;
@@ -30,15 +34,16 @@ int main(int argc,char *argv[]) {
         macroName = amFile(argv[i]);
 
         printf("Started %s assembler process\n\n", fullFileName);
-        file = fopen(fullFileName, "r"); /* create .as file */
+        file = fopen(fullFileName, "ab+"); /* create .as file */
         file = PreReadFile(fullFileName, Mhead);
         if (file == NULL) {
             printf("file %s doesn't exist", fullFileName);
+            return 1;
         } else {
             file = WritePreFile(macroName, Mtail); /* write the file after macros span */
         }
 
-        file = fopen(macroName, "r"); /* create .am file */
+        file = fopen(macroName, "ab+"); /* create .am file */
         printf("%s\n",macroName);
     }
 return 1;
