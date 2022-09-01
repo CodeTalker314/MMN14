@@ -106,10 +106,12 @@ FILE* PreReadFile(char *file, struct Macros *head)
   }
   while(fgets(line, MAX, fp)) /* getting lines */
   {
-   struct  Macros* temp = NULL;
+
+      struct  Macros* temp = NULL;
    temp = (struct Macros*)malloc(sizeof(struct Macros)); 
    if(StartEndMacro(line) == 1) /* the beginning of the definition of a macro */
-      { 
+      {
+       printf("%s\n", line);
         InsertName(temp , line); /* add the name to temp in macro list */
         InsertContent(temp , fp); /* add the content to temp in macro list */
         temp -> next = head ; /* add another node to macro list */
@@ -120,21 +122,17 @@ FILE* PreReadFile(char *file, struct Macros *head)
 }
 
 
-FILE* WritePreFile(char *filename,struct Macros *tail)
+FILE* WritePreFile(char *asfile, char *amfile, struct Macros *tail)
 {
   int macroflag;
   FILE *fpw; /* file we write to */
   FILE *fpr; /* file we read from */
-  char line [MAX];
-  char fname[MAX];
-  char fname2[MAX];
+  char line[MAX];
   memset(line , '\0' , MAX);
-  strcpy(fname,filename);
-  strcpy(fname2,filename);
-  fpr = fopen(fname,"r");
-  fpw = fopen(fname2,  "w");
+  fpr = fopen(asfile,"r");
+  fpw = fopen(amfile,  "w");
   if(fpr == NULL) /* failed to open the file */
-     printf("error: cant open the file: %s \n \n" , filename);
+     printf("error: cant open the file: %s \n \n" , asfile);
   while(fgets(line, MAX, fpr)) /* getting lines */
   {
     if(!macroflag)

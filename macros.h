@@ -16,4 +16,4 @@ void InsertName(struct Macros *temp, char line[]);
 void InsertContent(struct Macros *temp, FILE *fp);
 int IsMacroCall(char line[], FILE *fpw, struct Macros *tail);
 FILE* PreReadFile(char *filename, struct Macros *head);
-FILE* WritePreFile(char *filename,struct Macros *tail);
+FILE* WritePreFile(char *filename, char* macrofile,struct Macros *tail);

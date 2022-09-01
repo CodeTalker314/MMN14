@@ -40,7 +40,7 @@ int main(int argc,char *argv[]) {
             printf("file %s doesn't exist", fullFileName);
             return 1;
         } else {
-            file = WritePreFile(macroName, Mtail); /* write the file after macros span */
+            file = WritePreFile(fullFileName, macroName, Mtail); /* write the file after macros span */
         }
 
         file = fopen(macroName, "ab+"); /* create .am file */
