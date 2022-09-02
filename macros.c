@@ -78,10 +78,10 @@ int IsMacroCall(char line[], FILE *fpw, struct Macros *tail) /* If macro call, r
     mindex++;
     index++;
   }
-  printf("%s\n", Mname);
   while (temp != NULL) /* while we have macros */
   {
-    if (!strcmp(temp->macroname , Mname)) /* if the macro name matches to the call in the file */
+      printf("XXX: %s | %s\n", temp->macroname, Mname);
+      if (!strcmp(temp->macroname , Mname)) /* if the macro name matches to the call in the file */
     {
     fprintf(fpw, "%s", temp->macrodata); /* sending the content to its place in the file */
     return 1; /* it is a macro call */
@@ -139,37 +139,24 @@ FILE* WritePreFile(char *asfile, char *amfile, struct Macros *tail)
   inmacro=0;
   while(fgets(line, MAX, fpr)) /* getting lines */
   {
-      printf("I'm here 1\n");
-      if(!inmacro) /* Not inside macro declaration"*/
+      if (!inmacro) /* Not inside macro declaration"*/
       {
-          printf("Im here 2\n");
-          if (!IsMacroCall(line, fpw, tail)) /* is a macro call */
+          if(StartEndMacro(line) == 1){ /* Start of macro declaration*/
+              inmacro = 1;
+              continue;
+          }
+          else if (!IsMacroCall(line, fpw, tail)) /* isn't a macro call */
           {
-              printf("Im here 3\n");
-              /*printf("%s and %s\n", tail->macroname, tail->macrodata);*/
-              if (StartEndMacro(line) == 1) /* macro declaration beginning */
-              {
-                  inmacro = 1;
-              } else if (StartEndMacro(line) == 0) /* no macro = regular code word */
-              {
-                  fprintf(fpw, "%s", line); /* add word to file */
-                  printf("regular %s\n", line);
-              }
+              fprintf(fpw, "%s", line); /* add line to file */
           }
       }
-       else
-       {
-            fprintf(fpw,"%s",line); /* add word to file */
-            printf("regular %s\n", line);
-        }
-    }
-    else
-    {
-      if(StartEndMacro(line) == 2) /* end of macro */
-      {
-          inmacro = 0;
+      else {
+          if(StartEndMacro(line) == 2) /* end of macro */
+          {
+              inmacro = 0;
+              continue;
+          }
       }
-    }
   }
   fclose(fpr);
   return fpw;
