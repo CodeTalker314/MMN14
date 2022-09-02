@@ -8,7 +8,6 @@
 int main(int argc,char *argv[]) {
     FILE *file;
     char *macroName;
-    struct Macros *Mtail;
     struct Macros *Mhead;
     int i;
     char *fullFileName;
@@ -16,8 +15,6 @@ int main(int argc,char *argv[]) {
     /* initialize macro list */
 
     Mhead = (struct Macros *) malloc(sizeof(struct Macros));
-    Mtail = (struct Macros *) malloc(sizeof(struct Macros));
-    Mtail = Mhead;
 
     /*no file input case*/
     if (argc <= 1) {
@@ -35,12 +32,15 @@ int main(int argc,char *argv[]) {
 
         printf("Started %s assembler process\n\n", fullFileName);
         file = fopen(fullFileName, "ab+"); /* create .as file */
-        file = PreReadFile(fullFileName, Mhead);
+        Mhead = PreReadFile(fullFileName, Mhead);
+        printf("this %s and %s\n", Mhead->macroname, Mhead->macrodata);
+        printf("ans also this %s and %s\n", Mhead->next->macroname, Mhead->next->macrodata);
         if (file == NULL) {
             printf("file %s doesn't exist", fullFileName);
             return 1;
         } else {
-            file = WritePreFile(fullFileName, macroName, Mtail); /* write the file after macros span */
+            rewind(file);
+            file = WritePreFile(fullFileName, macroName, Mhead); /* write the file after macros span */
         }
 
         file = fopen(macroName, "ab+"); /* create .am file */

@@ -78,6 +78,7 @@ int IsMacroCall(char line[], FILE *fpw, struct Macros *tail) /* If macro call, r
     mindex++;
     index++;
   }
+  printf("%s\n", Mname);
   while (temp != NULL) /* while we have macros */
   {
     if (!strcmp(temp->macroname , Mname)) /* if the macro name matches to the call in the file */
@@ -93,7 +94,7 @@ int IsMacroCall(char line[], FILE *fpw, struct Macros *tail) /* If macro call, r
 /*Performing the first pass on the file (inserting the macros into the macro table, */
 /*  copying the corresponding rows from the table to the file, etc.) */
 
-FILE* PreReadFile(char *file, struct Macros *head)      
+struct Macros* PreReadFile(char *file, struct Macros *head)
 {
   char line [MAX];
   FILE *fp;
@@ -108,54 +109,68 @@ FILE* PreReadFile(char *file, struct Macros *head)
   {
 
       struct  Macros* temp = NULL;
-   temp = (struct Macros*)malloc(sizeof(struct Macros)); 
+   temp = (struct Macros*)malloc(sizeof(struct Macros));
    if(StartEndMacro(line) == 1) /* the beginning of the definition of a macro */
       {
-       printf("%s\n", line);
         InsertName(temp , line); /* add the name to temp in macro list */
         InsertContent(temp , fp); /* add the content to temp in macro list */
         temp -> next = head ; /* add another node to macro list */
         head = temp;
       }
   }
-  return fp; /* succeeded to process the file */
+  rewind(fp);
+  return head; /* succeeded to process the file */
 }
 
 
 FILE* WritePreFile(char *asfile, char *amfile, struct Macros *tail)
 {
-  int macroflag;
+  int inmacro;
   FILE *fpw; /* file we write to */
   FILE *fpr; /* file we read from */
   char line[MAX];
   memset(line , '\0' , MAX);
   fpr = fopen(asfile,"r");
   fpw = fopen(amfile,  "w");
-  if(fpr == NULL) /* failed to open the file */
+  if(fpr == NULL) /* failed to open the file */{
      printf("error: cant open the file: %s \n \n" , asfile);
+     return NULL;
+  }
+  inmacro=0;
   while(fgets(line, MAX, fpr)) /* getting lines */
   {
-    if(!macroflag)
-    {
-        if(!IsMacroCall(line, fpw, tail))
+      printf("I'm here 1\n");
+      if(!inmacro) /* Not inside macro declaration"*/
+      {
+          printf("Im here 2\n");
+          if (!IsMacroCall(line, fpw, tail)) /* is a macro call */
+          {
+              printf("Im here 3\n");
+              /*printf("%s and %s\n", tail->macroname, tail->macrodata);*/
+              if (StartEndMacro(line) == 1) /* macro declaration beginning */
+              {
+                  inmacro = 1;
+              } else if (StartEndMacro(line) == 0) /* no macro = regular code word */
+              {
+                  fprintf(fpw, "%s", line); /* add word to file */
+                  printf("regular %s\n", line);
+              }
+          }
+      }
+       else
        {
-         if(StartEndMacro(line) == 0) /* no macro = regular code word */
-         {
             fprintf(fpw,"%s",line); /* add word to file */
-            printf("%s\n", line);
-         }
-         else 
-         {
-            macroflag = 1;
-         } 
-       }
+            printf("regular %s\n", line);
+        }
     }
     else
     {
       if(StartEndMacro(line) == 2) /* end of macro */
-        macroflag = 0;
-    }        
-  } 
+      {
+          inmacro = 0;
+      }
+    }
+  }
   fclose(fpr);
   return fpw;
 }
