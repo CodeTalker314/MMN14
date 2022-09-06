@@ -1,47 +1,296 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "arrOfSavedWords.h"
-#define MAX_LINE_LENGTH 80
-#define MAX_LABEL_LENGTH 30
+#include "syntax.h"
 
-int LineIsEmpty(char line[])
+char *savedWords[24];
+
+int LineIsEmpty(char line[],int index)
 {
-   int index;
-   for(index = 0 ,index <= MAX_LINE_LENGTH ,index++)
+   int indexFor;
+   for(indexFor = index; indexFor <= MAX_LINE_LENGTH ; index++)
    {
-      if((isspace(line[index])) && (line[index] != '\n'))
+      if((isspace(line[indexFor])) && (line[indexFor] != '\n'))
       {
          continue;
       }
-      if(line[index] == '/n')
+      if(line[indexFor] == '\n')
       {
          return 1;
       }
       return 0; /* no need to cheack for EOF because fgets stops at EOF */   
    }
+   return 0;
 }/* end of LineIsEmpty */ 
+
 
 
 int LineIsComment(char line[])
 {
-   if(line == ';')/* first char is ';' */ 
+   if(line[0] == ';')/* first char is ';' */ 
    {
       return 1;
    }
    return 0;
-}/* end of LineIsComment */ 
+}/* end of LineIsComment */
 
 
-int LineIsEntry(char line[])
+
+int firstFieldIsLabel(char line[])
 {
+	int eror;
+   int index;
+   int CharCounts;
+   CharCounts = 0;
+   index = 0;
+   while( (isspace(line[index])) && (line[index] != '\n') )/* skipping spaces and reaching a char */
+   {
+      index++;
+   }
+   if ( !((('a' <= line[index])&&(line[index] <= 'z')) || (('A' <= line[index])&&(line[index] <= 'Z'))) )
+	{
+	 	eror = 1;	
+	} 
+   while(((('a' <= line[index])&&(line[index] <= 'z'))||(('A' <= line[index])&&(line[index] <= 'Z'))) || (('0' <= line[index])&&(line[index] <= '9')))
+   {
+      index++;
+      CharCounts++;
+   }/* here we reach the end of the label name (if its there) */   
+   
+   if(line[index] == ':')
+   {
+   	if(CharCounts > MAX_LABEL_LENGTH)
+   	{        
+      	return 2;/* error label length */
+   	}
+		if(eror == 1)
+   	{        
+      	return 3;
+   	}
+      return 1;/* Legal Label */ 
+   }
+   return 0;/* not a label */
+}/* end of firstFieldIsLabel */
+
+
+
+int isGuidance(char line[],int index)
+{
+   if(!strcmp(line[index],".data"))
+   {
+      return 1;
+   }
+   if(!strcmp(line[index],".string"))
+   {
+      return 2;
+   }
+   if(!strcmp(line[index],".struct"))
+   {
+      return 3;
+   }
+   return 0;
+}/* end of isGuidance */  
+
+
+int setLabelName( struct labels *currentle , struct labels *head, char line[])
+{
+	int index;
+	int nindex;	
+	int savedIndex;
+	char name [MAX];
+	struct labels *nowCheck;
+	nowCheck = head;
+	index = 0;
+	nindex = 0;
+	savedIndex = 0;
+	memset(name , '\0' , MAX);
+	while(isspace(line[index])) /* skipping spaces */
+	{
+   	index ++;
+	} 
+   while (line[index] != ':') /* reaching a char which is the name */
+   {
+   	name[nindex] = line[index]; /* put the value in name array */
+      nindex++;
+      index++;
+   }
+   while(!strcmp(nowCheck->labelName,name))
+   {
+   	nowCheck = nowCheck->next;
+	}
+	if(strcmp(nowCheck->labelName,name))	
+   {
+		return 2;/* label name is taken */
+   }
+	nowCheck = head;/* reset node list pointer */
+	while(!strcmp(name,savedWords[savedIndex]))	
+   {
+		savedIndex++;
+	}
+	if(strcmp(name,savedWords[savedIndex])
+	{
+		return 1;/* label name is a system saved word */
+   }
+	strcpy(currentle->labelName,name); /* adding the name to its place in the node */
+	return 0;
+}/* end of setLabelName */
+
+
+int isDataLegal(char line[] , int index)
+{
+	while( (isspace(line[index])) && (line[index] != '\n') ) /* skipping spaces and reaching a char */
+   {
+      index++;
+   }/* here we encounter the first char after the .data */ 
+   while(line[index] != '\n')
+   {
+      while( (isspace(line[index])) && (line[index] != '\n') ) /* skipping spaces and reaching a char */
+      {
+         index++;
+      }/* here we encounter the first char after the last number ','  or for the first time */ 
+      if(line[index] == ',')
+      {
+         return 3;
+      }      
+      if( (line[index] == '-') || (line[index] == '+') || ( (line[index] >= '0') && (line[index] <= '9') ) )
+      {
+         index++;
+      }/* here the first char is legal */
+      while((line[index] >= '0') && (line[index] <= '9'))
+      {
+         index++;
+      }/* here we arrive at the first char after the number */
+      while( (isspace(line[index])) && (line[index] != '\n') )/* skipping spaces and reaching a char */
+      {
+         index++;
+      }/* here we encounter the first char after the last number and white space */ 
+      if(line[index] == ',')
+      {
+         index++;
+         continue;
+      }
+      if(line[index] == '\n')
+      {
+         return 1;
+      }
+      return 2;
+   }
+   return 0;         
+}/* end of isDataLegal */	
+
+
+int isStringLegal(char line[],int index)
+{
+	int closed;
+   closed = 1;
+   while( (isspace(line[index])) && (line[index] != '\n') ) /* skipping spaces and reaching a char */
+   {
+      index++;
+   }/* here we encounter the first char after the .string */
+   if(line[index] != '"')
+   {
+      return 2;
+   }
+   index++; /* here we arrive at the first char in the string */ 
+   while(line[index] != '\n')
+   {
+      if(closed % 2 == 0)
+      {
+         while(isspace(line[index]))  
+         {
+            index++;
+         }
+         if(line[index] != '\n')
+         {
+            closed++;
+         }
+      }
+      if(line[index] == '"')
+      {
+         closed++;
+      }
+      index++;
+   }
+   if(closed % 2 == 1)
+   {
+      return 3;
+   }
+   return 1;
+}/* end of isStringLegal */
+
+
+int isStructLegal(char line[],int index)
+{
+   int closed;
+   if(line[index] == ',')
+   {
+      return 2;   
+   }
+   while(line[index] != ',')
+   {   
+      if( (line[index] == '-') || (line[index] == '+') || ( (line[index] >= '0') && (line[index] <= '9') ) )
+      {
+         index++;
+      }/* here the first char is legal */
+      while( (line[index] >= '0') && (line[index] <= '9') )/* skiping legal chars */
+      {
+         index++;
+      }/* here we at ilagel input for number */
+      while( (isspace(line[index])) && (line[index] != '\n') ) /* skipping spaces and reaching a char */
+      {
+         index++;
+      }  
+      if(line[index] != ',')
+      {
+         return 3;
+      }
+   }/* if we end up here the number is legal */
+   index++; /* skip the ',' */
+   while( (isspace(line[index])) && (line[index] != '\n')) /* skipping spaces and reaching a char */
+   {
+      index++;
+   }  
+   if(line[index] != '"')
+   {
+      return 4;
+   }
+   index++;/* skip the '"' */ 
+
+   closed = 1;
+   while(line[index] != '\n')
+   {
+      if(closed % 2 == 0)
+      {
+         while(isspace(line[index]))  
+         {
+            index++;
+         }
+         if(line[index] != '\n')
+         {
+            closed++;
+         }
+      }
+      if(line[index] == '"')
+      {
+         closed++;
+      }
+      index++;
+   }
+   if(closed % 2 == 1)
+   {
+      return 5;
+   }
+   return 1;
+}/* end of isStructLegal */
+
+
+int LineIsEntry(char line[], int index)
+{
+    
    int index;
    index = 0;
    while((isspace(line[index])) && (line[index] != '\n')) /* skipping spaces and reaching a char */
    {   
       index++;
    }  
-   if (!strcmp(line[index], ".entry"))
+   if (!(strcmp(&line[index], ".entry")))
    {	
       return 1;
    }
@@ -57,7 +306,7 @@ int LineIsExtern(char line[])
    {
       index++;
    }
-   if (!strcmp(line[index], ".extern"))
+   if (!strcmp(&line[index], ".extern"))
    {
       return 1;
    }
@@ -67,15 +316,20 @@ int LineIsExtern(char line[])
 
 int LegalLabelForEntryAndExtern(char line[])
 {
-   int index;
-   index = 0; 
+	int index;
+   int eror;
    int CharCounts;
+   index = 0;
    CharCounts = 0;
-   while( (isspace(line[index])) && (line[index] != '\n') /* skipping spaces and reaching a char */
+   while( (isspace(line[index])) && (line[index] != '\n')) /* skipping spaces and reaching a char */
    {
       index++;
    }
-   while( (('a' <= line[index]) && (line[index] <= 'z')) || (('A' <= line[index]) && (line[index] <= 'Z')) && (('0' <= line[index]) && (line[index] <= '9')) )
+	if ( !((('a' <= line[index])&&(line[index] <= 'z')) || (('A' <= line[index])&&(line[index] <= 'Z'))) )
+	{
+	 	eror = 1;	
+	}
+   while(((('a' <= line[index])&&(line[index] <= 'z'))||(('A' <= line[index])&&(line[index] <= 'Z'))) || (('0' <= line[index])&&(line[index] <= '9')))
    {
       index++;
       CharCounts++;
@@ -92,238 +346,64 @@ int LegalLabelForEntryAndExtern(char line[])
    {
       return 3;/* error label length */
    }
+	if(eror == 3)
+   {
+      return 4;/* error label length */
+   }
    return 1;/* Legal Label */
 }/* end of LegalLabelForEntryAndExtern */
 
-         
-int LegalLabelInStart(char line[])
-{
-   int CharCounts;
-   CharCounts = 0;
-   while( (isspace(line[index])) && (line[index] != '\n') /* skipping spaces and reaching a char */
-   {
-      index++;
-   }
-   while( (('a' <= line[index]) && (line[index] <= 'z')) || (('A' <= line[index]) && (line[index] <= 'Z')) && (('0' <= line[index]) && (line[index] <= '9')) )
-   {
-      index++;
-      CharCounts++;
-   }/* here we reach the end of the label name (if its there) */   
-   if(CharCounts > MAX_LABEL_LENGTH)
-   {
-      return 2;/* error label length */
-   }
-   if(line[index] != ':')
-   {
-      return 0;/* not a label */ 
-   }
-   return 1;/* Legal Label */
-}/* end of LegalLabelInStart */
 
-         
-int isSavedWord(char line[],char newSaved[])
+int setNameExternAndEntry( struct labels *currentle , struct labels *head, char line[], int index)
 {
-   int index;
-   int indexNew;
-   index = 0;
-   indexNew =0;
-   while(saved[index] != NULL)
+	int nindex;	
+	int savedIndex;
+	char name [MAX];
+	struct labels *nowCheck;
+	nowCheck = head;
+	nindex = 0;
+	savedIndex = 0;
+	memset(name , '\0' , MAX);
+	while(isspace(line[index])) /* skipping spaces */
+	{
+   	index ++;
+	}  
+	while(((('a' <= line[index])&&(line[index] <= 'z'))||(('A' <= line[index])&&(line[index] <= 'Z'))) || (('0' <= line[index])&&(line[index] <= '9')))
    {
-      if(!strcmp(line,saved[index]))
-      {
-         return 2;
-      }
+   	name[nindex] = line[index]; /* put the value in name array */
+      nindex++;
+      index++;
    }
-   while(newSaved[indexNew] != NULL)
+   while(!strcmp(nowCheck->labelName,name))
    {
-      if(!strcmp(line,newSaved[indexNew]))
-      {
-         return 1;
-      }
-      while(newSaved[indexNew] != NULL)
-      {
-         indexNew++;
-      }
-      indexNew++;
+   	nowCheck = nowCheck->next;
+	}
+	if(strcmp(nowCheck->labelName,name))	
+   {
+		return 2;/* label name is taken */
    }
-   return 0;
-}/* end of isSavedWord */
-         
-int isGuidance(char line[])
+	nowCheck = head;/* reset node list pointer */
+	while(!strcmp(name,savedWords[savedIndex]))	
+   {
+		savedIndex++;
+	}
+	if(strcmp(name,savedWords[savedIndex])
+	{
+		return 1;/* label name is a system saved word */
+   }
+	strcpy(currentle->labelName,name); /* adding the name to its place in the node */
+	return 0;
+}/* end of setLabelName */
+
+
+int isCommandZero(char line[],int index)
 {
-   if(!strcmp(line,".data"))
+	char *linee = line[index];
+   if(!strcmp(linee,"rts"))
    {
       return 1;
    }
-   if(!strcmp(line,".string"))
-   {
-      return 2;
-   }
-   if(!strcmp(line,".struct"))
-   {
-      return 3;
-   }
-   return 0;
-}/* end of isGuidance */  
- 
-         
-int isDataLegal(char line[])
-{
-   int index;
-   index = 0;
-   while( (isspace(line[index])) && (line[index] != '\n') /* skipping spaces and reaching a char */
-   {
-      index++;
-   }/* here we encounter the first char after the .data */ 
-   while(line[index] != '\n')
-   {
-      while( (isspace(line[index])) && (line[index] != '\n') /* skipping spaces and reaching a char */
-      {
-         index++;
-      }/* here we encounter the first char after the last number ',' */ 
-      if(line[index] == ',')
-      {
-         return 3;
-      }      
-      if( (line[index] == '-') || (line[index] == '+') || ( (line[index] >= '0') && (ine[index] <= '9') ) )
-      {
-         index++;
-      }/* here the first char is legal */
-      while((line[index] >= '0') && (ine[index] <= '9'))
-      {
-         index++;
-      }/* here we arrive at the first char after the number */
-      while( (isspace(line[index])) && (line[index] != '\n') /* skipping spaces and reaching a char */
-      {
-         index++;
-      }/* here we encounter the first char after the last number and white space */ 
-      if(line[index] == ',')
-      {
-         index++;
-         continue;
-      }
-      if(line[index] == '\n')
-      {
-         return 1;
-      }
-      return 2;
-   }         
-}/* end of isDataLegal */
-
-            
-int isStringLegal(char line[]) 
-{
-   int closed;
-   int index;
-   closed = 1;
-   index = 0;
-   while( (isspace(line[index])) && (line[index] != '\n') /* skipping spaces and reaching a char */
-   {
-      index++;
-   }/* here we encounter the first char after the .string */
-   if(line[index] != '"')
-   {
-      return 2;
-   }
-   index++; /* here we arrive at the first char in the string */ 
-   while(line[index] != NULL)
-   {
-      if(closed % 2 == 0)
-      {
-         while(isspace(line[index]))  
-         {
-            index++;
-         }
-         if(line[index] != NULL)
-         {
-            closed++;
-         }
-      if(line[index] == '"')
-      {
-         closed++;
-      }
-      index++;
-   }
-   if(closed % 2 == 1)
-   {
-      return 3;
-   }
-   return 1;
-}/* end of isStringLegal */
-
-         
-int isStructLegal(char line[])
-{
-   int index;
-   index = 0;
-   if(line[index]) == ',')
-   {
-      return 2;   
-   }
-   while(line[index] != ',')
-   {   
-      if( (line[index] == '-') || (line[index] == '+') || ( (line[index] >= '0') && (ine[index] <= '9') ) )
-      {
-         index++;
-      }/* here the first char is legal */
-      while( (line[index] >= '0') && (ine[index] <= '9') )/* skiping legal chars */
-      {
-         index++;
-      }/* here we at ilagel input for number */
-      while( (isspace(line[index])) && (line[index] != '\n') /* skipping spaces and reaching a char */
-      {
-         index++;
-      }  
-      if(line[index] != ',')
-      {
-         return 3;
-      }
-   }/* if we end up here the number is legal */
-   index++; /* skip the ',' */
-   while( (isspace(line[index])) && (line[index] != '\n') /* skipping spaces and reaching a char */
-   {
-      index++;
-   }  
-   if(line[index] != '"')
-   {
-      return 4;
-   }
-   index++;/* skip the '"' */ 
-   int closed;
-   closed = 1;
-   while(line[index] != NULL)
-   {
-      if(closed % 2 == 0)
-      {
-         while(isspace(line[index]))  
-         {
-            index++;
-         }
-         if(line[index] != NULL)
-         {
-            closed++;
-         }
-      if(line[index] == '"')
-      {
-         closed++;
-      }
-      index++;
-   }
-   if(closed % 2 == 1)
-   {
-      return 5;
-   }
-   return 1;
-}/* end of isStructLegal */
-
-
-int isCommandZero(char line[])
-{
-   if(!strcmp(line,"rts"))
-   {
-      return 1;
-   }
-   if(!strcmp(line,"hlt"))
+   if(!strcmp(linee,"hlt"))
    {
       return 2;
    }
@@ -331,62 +411,88 @@ int isCommandZero(char line[])
 }/* end of isCommandZero */ 
 
 
-int isCommandOne(char line[])
+int isCommandOne(char line[], int index)
 {
-   if(!strcmp(line,"not"))
+	char *linee = line[index];
+   if(!strcmp(linee,"not"))
    {
       return 1;
    }
-   if(!strcmp(line,"clr"))
+   if(!strcmp(linee,"clr"))
    {
       return 2;
    }
-   if(!strcmp(line,"inc"))
+   if(!strcmp(linee,"inc"))
    {
       return 3;
    }
-   if(!strcmp(line,"dec"))
+   if(!strcmp(linee,"dec"))
    {
       return 4;
    }
-   if(!strcmp(line,"jmp"))
+   if(!strcmp(linee,"jmp"))
    {
       return 5;
    }
-   if(!strcmp(line,"bne"))
+   if(!strcmp(linee,"bne"))
    {
       return 6;
    }
-   if(!strcmp(line,"get"))
+   if(!strcmp(linee,"get"))
    {
       return 7;
    }
-   if(!strcmp(line,"prn"))
+   if(!strcmp(linee,"prn"))
    {
       return 8;
    }
-   if(!strcmp(line,"jsr"))
+   if(!strcmp(linee,"jsr"))
    {
       return 9;
    }
    return 0;
-}/* end of isCommandOne  */      
-   
+}/* end of isCommandOne  */ 
 
-int LegaOpForIsCommandOne(char line[],bollean isprn)
+
+int isCommandTwo(char line[], int index)
 {
-   int index;
-   index = 0; 
+	char *linee = line[index];
+   if(!strcmp(linee,"mov"))
+   {
+      return 1;
+   }
+   if(!strcmp(linee,"cmp"))
+   {
+      return 2;
+   }
+   if(!strcmp(linee,"add"))
+   {
+      return 3;
+   }
+   if(!strcmp(linee,"sub"))
+   {
+      return 4;
+   }
+   if(!strcmp(linee,"lea"))
+   {
+      return 5;
+   }
+   return 0;
+}/* end of isCommandTwo  */ 
+
+
+int LegalOpForIsCommandOne(char line[],int index,int isprn)
+{
    int CharCounts;
    CharCounts = 0;
-   while( (isspace(line[index])) && (line[index] != '\n') /* skipping spaces and reaching a char */
+   while( (isspace(line[index])) && (line[index] != '\n') )/* skipping spaces and reaching a char */
    {
       index++;
    }
    if( (isprn) && (line[index] == '#') )
    {
       index++;
-      if( (line[index] == '-') || (line[index] == '+')
+      if( (line[index] == '-') || (line[index] == '+') )
       {
          index++;
       }
@@ -396,7 +502,7 @@ int LegaOpForIsCommandOne(char line[],bollean isprn)
          CharCounts++;
       }
    }else{
-            while( (('a' <= line[index]) && (line[index] <= 'z')) || (('A' <= line[index]) && (line[index] <= 'Z')) && (('0' <= line[index]) && (line[index] <= '9')) )
+            while(((('a' <= line[index])&&(line[index] <= 'z'))||(('A' <= line[index])&&(line[index] <= 'Z'))) || (('0' <= line[index])&&(line[index] <= '9')))
             {
                index++;
                CharCounts++;
@@ -406,7 +512,7 @@ int LegaOpForIsCommandOne(char line[],bollean isprn)
                index++;
                CharCounts++;
             }
-            while( (('a' <= line[index]) && (line[index] <= 'z')) || (('A' <= line[index]) && (line[index] <= 'Z')) && (('0' <= line[index]) && (line[index] <= '9')) )
+            while(((('a' <= line[index])&&(line[index] <= 'z'))||(('A' <= line[index])&&(line[index] <= 'Z'))) || (('0' <= line[index])&&(line[index] <= '9')))
             {
                index++;
                CharCounts++;
@@ -425,44 +531,50 @@ int LegaOpForIsCommandOne(char line[],bollean isprn)
       return 3;/* error label / op length */
    }
    return 1;/* Legal op */
-}/* end of LegalOpForIsCommandOne */       
- 
-         
-int isCommandTwo(char line[])
+}/* end of LegalOpForIsCommandOne */
+
+
+int isTwoS(char line[],int index)
 {
-   if(!strcmp(line,"mov"))
+   while(line[index] != '\n')
    {
-      return 1;
-   }
-   if(!strcmp(line,"cmp"))
-   {
-      return 2;
-   }
-   if(!strcmp(line,"add"))
-   {
-      return 3;
-   }
-   if(!strcmp(line,"sub"))
-   {
-      return 4;
-   }
-   if(!strcmp(line,"lea"))
-   {
-      return 5;
+      if(line[index] == '.')
+      {
+         return 1;
+      }
    }
    return 0;
-}/* end of isCommandTwo  */ 
- 
+}/* end of isTwoS */   
 
-int LegalOpForIsCommandTwo(char line[],int iscmp,int islea)
+
+int commandOneOp(char line[],int index)
 {
-   int index;
-   index = 0; 
+   while(line[index] != '\n')
+   {
+      if(line[index] == '#')
+      {
+         return 0;
+      }
+		if(line[index] == '.')
+      {
+         return 2;
+      }
+		if( (line[index] == 'r') && ((line[index+1] >= '0') && (line[index+1] <= '9')) && (isspace(line[index+2])) )
+		{
+			return 3;
+		}
+   }
+   return 1;
+}/* end of isTwoS */
+
+
+int LegalOpForIsCommandTwo(char line[],int index, int iscmp,int islea)
+{
    int CharCounts;
-   CharCounts = 0;
    int CharCountsTwo;
    CharCountsTwo = 0;
-   while( (isspace(line[index])) && (line[index] != '\n') /* skipping spaces and reaching a char */
+   CharCounts = 0;
+   while( (isspace(line[index])) && (line[index] != '\n') )/* skipping spaces and reaching a char */
    {
       index++;
    }
@@ -472,7 +584,7 @@ int LegalOpForIsCommandTwo(char line[],int iscmp,int islea)
       {
          return 4;
       }
-      if(isOneR(line[index]))
+      if(isOneR(line,index))
       {
          return 5;
       }
@@ -480,7 +592,7 @@ int LegalOpForIsCommandTwo(char line[],int iscmp,int islea)
    if(line[index] == '#')
    {
       index++;
-      if( (line[index] == '-') || (line[index] == '+')
+      if( (line[index] == '-') || (line[index] == '+') )
       {
          index++;
       }
@@ -490,7 +602,7 @@ int LegalOpForIsCommandTwo(char line[],int iscmp,int islea)
          CharCounts++;
       }
    }else{
-           while( (('a' <= line[index]) && (line[index] <= 'z')) || (('A' <= line[index]) && (line[index] <= 'Z')) && (('0' <= line[index]) && (line[index] <= '9')) )
+           while(((('a' <= line[index])&&(line[index] <= 'z'))||(('A' <= line[index])&&(line[index] <= 'Z'))) || (('0' <= line[index])&&(line[index] <= '9')))
            {
               index++;
               CharCounts++;
@@ -499,7 +611,7 @@ int LegalOpForIsCommandTwo(char line[],int iscmp,int islea)
            { 	
               index++;
            } 
-           while( (('a' <= line[index]) && (line[index] <= 'z')) || (('A' <= line[index]) && (line[index] <= 'Z')) && (('0' <= line[index]) && (line[index] <= '9')) )
+           while(((('a' <= line[index])&&(line[index] <= 'z'))||(('A' <= line[index])&&(line[index] <= 'Z'))) || (('0' <= line[index])&&(line[index] <= '9')))
            {
               index++;
               CharCounts++;
@@ -526,7 +638,7 @@ int LegalOpForIsCommandTwo(char line[],int iscmp,int islea)
    if( (iscmp) && line[index] == '#' )
    {
       index++;
-      if( (line[index] == '-') || (line[index] == '+')
+      if( (line[index] == '-') || (line[index] == '+') )
       {
          index++;
       }
@@ -536,7 +648,7 @@ int LegalOpForIsCommandTwo(char line[],int iscmp,int islea)
          CharCounts++;
       }
    }else{
-           while( (('a' <= line[index]) && (line[index] <= 'z')) || (('A' <= line[index]) && (line[index] <= 'Z')) && (('0' <= line[index]) && (line[index] <= '9')) )
+           while(((('a' <= line[index])&&(line[index] <= 'z'))||(('A' <= line[index])&&(line[index] <= 'Z'))) || (('0' <= line[index])&&(line[index] <= '9')))
            {
               index++;
               CharCountsTwo++;
@@ -545,7 +657,7 @@ int LegalOpForIsCommandTwo(char line[],int iscmp,int islea)
            { 	
               index++;
            } 
-           while( (('a' <= line[index]) && (line[index] <= 'z')) || (('A' <= line[index]) && (line[index] <= 'Z')) && (('0' <= line[index]) && (line[index] <= '9')) )
+           while(((('a' <= line[index])&&(line[index] <= 'z'))||(('A' <= line[index])&&(line[index] <= 'Z'))) || (('0' <= line[index])&&(line[index] <= '9')))
            {
               index++;
               CharCounts++;
@@ -564,57 +676,60 @@ int LegalOpForIsCommandTwo(char line[],int iscmp,int islea)
       return 3;/* error label / op length */
    }
    return 1;/* Legal Label / op */
-}/* end of LegalOpForIsCommandTwo */  
-         
-int isOneR(char line[])
-{
-   int index;
-   index = 0;
-   if(line[index] == 'r')
-   {
-      index++;
-      if(('0' <= line[index]) && (line[index] <= '7'))
-      {
-         index++;
-         while( (isspace(line[index])) && (line[index] != '\n')) /* skipping spaces and reaching a char */
-         { 	
-            index++;
-         }
-         if(line[index] == ',')
-         {
-            return 1;
-         }
-      }
-   }
-   return 0;
-}/* end of isOneR */ 
+}/* end of LegalOpForIsCommandTwo */ 
 
-         
-int isOneS(char line[])
+
+int commandTwoFirstOp(char line[],int index)
 {
-   int index;
-   index = 0;
    while(line[index] != ',')
    {
-      if(line[index] == '.')
+      if(line[index] == '#')
       {
-         return 1;
+         return 0;
       }
+		if(line[index] == '.')
+      {
+         return 2;
+      }
+		if( (line[index] == 'r') && ((line[index+1] >= '0') && (line[index+1] <= '9')) && (isspace(line[index+2])) )
+		{
+			return 3;
+		}
    }
-   return 0;
-}/* end of isOneS */ 
- 
-         
-int isTwoS(char line[])
+   return 1;
+}/* end of isTwoS */
+
+
+int commandTwoSecondOp(char line[],int index)
 {
-   int index;
-   index = 0;
    while(line[index] != '\n')
    {
-      if(line[index] == '.')
+      if(line[index] == '#')
       {
-         return 1;
+         return 0;
       }
+		if(line[index] == '.')
+      {
+         return 2;
+      }
+		if( (line[index] == 'r') && ((line[index+1] >= '0') && (line[index+1] <= '9')) && (isspace(line[index+2])) )
+		{
+			return 3;
+		}
    }
-   return 0;
-}/* end of isTwoS */ 
+   return 1;
+}/* end of isTwoS */  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
