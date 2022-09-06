@@ -80,7 +80,7 @@ int IsMacroCall(char line[], FILE *fpw, struct Macros *tail) /* If macro call, r
   }
   while (temp != NULL) /* while we have macros */
   {
-      printf("XXX: %s | %s\n", temp->macroname, Mname);
+      
       if (!strcmp(temp->macroname , Mname)) /* if the macro name matches to the call in the file */
     {
     fprintf(fpw, "%s", temp->macrodata); /* sending the content to its place in the file */
@@ -123,7 +123,7 @@ struct Macros* PreReadFile(char *file, struct Macros *head)
 }
 
 
-FILE* WritePreFile(char *asfile, char *amfile, struct Macros *tail)
+void WritePreFile(char *asfile, char *amfile, struct Macros *tail)
 {
   int inmacro;
   FILE *fpw; /* file we write to */
@@ -134,7 +134,7 @@ FILE* WritePreFile(char *asfile, char *amfile, struct Macros *tail)
   fpw = fopen(amfile,  "w");
   if(fpr == NULL) /* failed to open the file */{
      printf("error: cant open the file: %s \n \n" , asfile);
-     return NULL;
+     
   }
   inmacro=0;
   while(fgets(line, MAX, fpr)) /* getting lines */
@@ -159,5 +159,21 @@ FILE* WritePreFile(char *asfile, char *amfile, struct Macros *tail)
       }
   }
   fclose(fpr);
-  return fpw;
+  fclose(fpw);
+  
+}
+
+
+void amRun( char* fullFileName , char* macroName , FILE* file )
+{
+	struct Macros *Mhead;/* to point the head of the macro list */
+	Mhead = (struct Macros *) malloc(sizeof(struct Macros));/* initialize macro list */
+   Mhead = PreReadFile(fullFileName, Mhead);	
+   if (file == NULL)
+   {
+   	printf("file %s doesn't exist", fullFileName);/* .as file wasnt open */ 
+      
+   }
+   rewind(file);
+   WritePreFile(fullFileName, macroName, Mhead); /* write the file after macros span */
 }
