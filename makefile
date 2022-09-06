@@ -1,8 +1,14 @@
-assembler : main.o macros.o utils.o
-	gcc -g -ansi -Wall -pedantic main.o macros.o utils.o -lm -o assembler 
-main.o : main.c
-	gcc -c -ansi -Wall -pedantic main.c -o main.o
-macros.o : macros.c macros.h
-	gcc -c -ansi -Wall -pedantic macros.c -o macros.o
-utils.o : utils.c utils.h
-	gcc -c -ansi -Wall -pedantic utils.c -o utils.o
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "utils.h"
+#include "macros.h"
+#include "syntax.h"
+
+
+#define MAX_LINE_LENGTH 80
+#define MAX_LABEL_LENGTH 30
+#define MAX 100
+
+
+int main(int argc, const char *argv[]);
