@@ -109,16 +109,44 @@ char* concat( char *s1, char *s2)
     }
 }
 
-char* asFile( char* str1)
+char* asFile( const char* str1)
 {
     char* result;
     asprintf(&result, "%s%s", str1, ".as\0");
     return result;
 }
 
-char* amFile( char* str1)
+char* amFile( const char* str1)
 {
     char* result;
     asprintf(&result, "%s%s", str1, ".am\0");
+    return result;
+}
+
+char* textFile( const char* str1)
+{
+    char* result;
+    asprintf(&result, "%s%s", str1, ".Text\0");
+    return result;
+}
+
+char* obFile( const char* str1)
+{
+    char* result;
+    asprintf(&result, "%s%s", str1, ".ob\0");
+    return result;
+}
+
+char* extFile( const char* str1)
+{
+    char* result;
+    asprintf(&result, "%s%s", str1, ".ext\0");
+    return result;
+}
+
+char* entFile( const char* str1)
+{
+    char* result;
+    asprintf(&result, "%s%s", str1, ".ext\0");
     return result;
 }
